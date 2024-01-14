@@ -4,13 +4,33 @@ class Program
 {
     static async Task<int> Main(string[] args)
     {
-        var fileOption = new Option<FileInfo?>(
+        var inputFile = new Option<FileInfo?>(
             name: "-i",
             description: "input file") {IsRequired = true};
+        var outputFile = new Argument<FileInfo?>("output", () => { return null; }, "output file");
 
         var rootCommand = new RootCommand("Karaoke formats encoder/decoder/converter");
-        rootCommand.AddOption(fileOption);
+        rootCommand.AddOption(inputFile);
+        rootCommand.AddArgument(outputFile);
+        rootCommand.SetHandler((ifile, ofile) => {
+            ReadFile(ifile!, ofile!);
+        }, inputFile, outputFile);
 
         return await rootCommand.InvokeAsync(args);
+    }
+
+    static void ReadFile(FileInfo ifile, FileInfo ofile)
+    {
+        if (!ifile.Exists) {
+            ConsoleColor PrevColor = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Error: input file not exists - " + ifile.FullName);
+            Console.ForegroundColor = PrevColor;
+            Environment.Exit(0);
+        }
+        if (Karamad.DetectType(ifile) && ofile != null)
+        {
+            Karamad.Convert(ofile);
+        }
     }
 }
