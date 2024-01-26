@@ -28,9 +28,9 @@ class Program
             Console.ForegroundColor = PrevColor;
             Environment.Exit(0);
         }
-        if (Karamad.DetectType(ifile) && ofile != null)
+        if (Karamad.Karamad.DetectType(ifile) && ofile != null)
         {
-            Karamad.Convert(ofile);
+            Karamad.Karamad.Convert(ofile);
         }
     }
 }

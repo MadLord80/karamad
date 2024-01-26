@@ -1,10 +1,9 @@
-
 using System.Text;
 using Mozilla.NUniversalCharDet;
 
 namespace KTypeClass
 {
-    public class KTypeKarafun : IKType
+	public class KTypeKarafun : Karamad.IKType
     {
         private readonly string[] _extensions = [".kfn"];
         // KFNB
@@ -54,8 +53,14 @@ namespace KTypeClass
             {5, "Video"},
             {6, "Visualization"}
         };
-        public bool CheckType(FileInfo file)
-        {        
+
+		// public bool DetectTypeByExtension(FileInfo file)
+		// {
+		// 	return false;
+		// }
+		public string[] fileExtensions {get => _extensions;}
+        public bool DetectTypeByContent(FileInfo file)
+        {
             int filesEncoding = 0;
             using (FileStream fs = new(file.FullName, FileMode.Open, FileAccess.Read))
             {
@@ -79,7 +84,7 @@ namespace KTypeClass
                         break;
                     }
                     string SpropName = GetPropDesc(propName);
-                    
+
                     fs.Read(propValue, 0, propValue.Length);
                     if (prop[4] == 1)
                     {
@@ -130,7 +135,7 @@ namespace KTypeClass
                     maxProps--;
                 }
                 this.endOfPropsOffset = fs.Position;
-        
+
                 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
                 byte[] numOfResources = new byte[4];
                 fs.Read(numOfResources, 0, numOfResources.Length);
