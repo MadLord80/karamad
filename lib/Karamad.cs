@@ -59,86 +59,27 @@ namespace Karamad
 		bool DetectTypeByContent(FileInfo inputFile);
 	}
 
-	enum LyricMeta {
-		artist,
-		album
-	}
 	public class KMLyric
 	{
-		public string artist {get; set;}
-		// public meta MetaInfo
-		// {
-
-		// }
-		private interface meta
-		{
-			public interface artist
-			{
-				const string name = "artist";
-				string value {get; set;}
-			}
-			public interface album
-			{
-				const string name = "album";
-				string value {get; set;}
-			}
-			public interface title
-			{
-				const string name = "title";
-				string value {get; set;}
-			}
-			public interface author
-			{
-				const string name = "author";
-				string value {get; set;}
-			}
-			public interface length
-			{
-				const string name = "length";
-				string value {get; set;}
-			}
-			public interface creator
-			{
-				const string name = "creator";
-				string value {get; set;}
-			}
-			public interface offset
-			{
-				const string name = "offset";
-				string value {get; set;}
-			}
-			public interface application
-			{
-				const string name = "application";
-				string value {get; set;}
-			}
-			public interface version
-			{
-				const string name = "version";
-				string value {get; set;}
-			}
-			public interface language
-			{
-				const string name = "language";
-				string value {get; set;}
-			}
-
-			// for Advanced Sub Station
-			public interface resolutionx
-			{
-				const string name = "resolutionx";
-				string value {get; set;}
-			}
-			public interface resolutiony
-			{
-				const string name = "resolutiony";
-				string value {get; set;}
-			}
-			public interface timer
-			{
-				const string name = "timer";
-				string value {get; set;}
-			}
-		}
+        public LyriMmeta meta = new();
+        public LyricWord[] words = { };
+		public class LyriMmeta
+        {
+            public string artist {get; set;}
+            public string album {get; set;}
+            public string title {get; set;}
+            public string author {get; set;}
+            public string length {get; set;}
+            public string creator {get; set;}
+            public string offset {get; set;}
+            public string application {get; set;}
+            public string version {get; set;}
+            public string language {get; set;}
+            // for Advanced Sub Station
+            public string resolutionx {get; set;}
+            public string resolutiony {get; set;}
+            public string timer {get; set;}
+        }
+        public class LyricWord {}		
 	}
 }
