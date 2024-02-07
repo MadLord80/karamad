@@ -62,7 +62,7 @@ namespace Karamad
 	public class KMLyric
 	{
         public LyriMmeta meta = new();
-        public LyricWord[] words = { };
+        public List<LyricWord> words = [];
 		public class LyriMmeta
         {
             public string artist {get; set;}
@@ -75,11 +75,35 @@ namespace Karamad
             public string application {get; set;}
             public string version {get; set;}
             public string language {get; set;}
+			public string comment {get; set;}
             // for Advanced Sub Station
             public string resolutionx {get; set;}
             public string resolutiony {get; set;}
             public string timer {get; set;}
         }
-        public class LyricWord {}		
+        public class LyricWord 
+		{
+			public uint? time {get; set;}
+			public string word {get; set;}
+			// for MiniLyrics
+			public List<uint> times {get; set;}
+			// for Walaoke
+			public Gender? gender {get; set;}
+			// for UltraStar
+			public WordType? type { get; set; }
+			public WordNote? note { get; set; }
+			// for Advanced Sub Station
+			public uint? layer {get; set;}
+			public string style {get; set;}
+			// public string speakerName {get; set;}
+			// left, right, vertical
+			public uint[] margin {get; set;}
+			public string effect {get; set;}
+		}		
+		public enum Gender { male, female, duet, none }
+		// TODO: add more types
+		public enum WordType { normal, golden, freestyle }
+		// TODO: create notes
+		public enum WordNote { c, c_dies, d, d_dies, e_minor}
 	}
 }
