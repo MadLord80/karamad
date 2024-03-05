@@ -62,6 +62,7 @@ namespace KTypeClass
 					}
 				}
 				// TODO: try autodetect encoding
+				// TODO: change library to https://github.com/CharsetDetector/UTF-unknown?
 				// TODO: autodetect encoding to utilities
 				if (_fileEncoding == Encoding.ASCII)
 				{
@@ -98,72 +99,106 @@ namespace KTypeClass
 					// words
 					else
 					{
-						KMLyric.LyricWord startWord = new();
-						KMLyric.Gender lineGender = KMLyric.Gender.none;
-						
+						KMLyric.LyricWord startWord = new(){times = []};
+						// KMLyric.Gender lineGender = KMLyric.Gender.none;
+
 						// ???
 						// [00:00.00] <00:00.04> When <00:00.16> the <00:05.92> lies ",
 						// enhanced1+w2: [02:13.12]M:<02:14.00>text<02:14.17>text<02:14.19>
 						// enhanced2:   [02:13.12]<02:14.00>text<02:14.17>text<02:14.19>
 						foreach (string block in line.Split(']'))
-						{							
+						{
 							Match matchTime = _lrcSTime.Match(block);
-							// times: 
+							// times:
 							// [02:13.12]text
 							// or
 							// [02:13.12][03:13.12][04:13.12]text
 							if (matchTime.Groups.Count > 1)
 							{
-								uint ms = time2ms(matchTime.Groups[1].Value, 
+								uint ms = time2ms(matchTime.Groups[1].Value,
 									matchTime.Groups[2].Value, matchTime.Groups[3].Value);
-								if (startWord.time == null) {
-									startWord.time = ms;
+								if (startWord.stime == null) {
+									startWord.stime = ms;
 								} else {
 									startWord.times.Add(ms);
 								}
 							}
 							// minilyrics+enhanced: impossible !
 							// [02:13.12][02:15.12][03:13.12]text<02:14.00>text<02:14.17>text<02:14.19>
-							// this is just text
-							// [02:13.12]text
-							// or
+
 							// [02:13.12][02:15.12][03:13.12]text
+							// or
+							// [02:13.12][02:15.12][03:13.12]F:text
 							else if (startWord.times.Count > 0)
 							{
-								startWord.word = block;
+								Match matchWT1 = _lrcWText1.Match(block);
+								if (matchWT1.Groups.Count > 1)
+								{
+									startWord.gender = setGender(matchWT1.Groups[1].Value);
+									startWord.word = matchWT1.Groups[2].Value;
+								}
+								else {
+									startWord.word = block;
+								}
+								startWord.raw = block;
 								kmlyric.words.Add(startWord);
-							}							
-							// enhanced: [02:13.12]F:text<02:14.00>text<02:14.17>text<02:14.19>
+							}
+							// enhanced: [02:13.12]text<02:14.00>text<02:14.17>text
+							// or
+							// enhanced: [02:13.12]<02:14.00>text<02:14.17>text
+							// or
+							// standard: [02:13.12]text
 							else
 							{
+								uint? prev_time = null;
 								foreach (string tblock in block.Split('>'))
-								{									
-									Match matchWText1 = _lrcWText1.Match(tblock);
-									// Match matchWText2 = _lrcWText2.Match(tblock);		
+								{
+									// Match matchWText1 = _lrcWText1.Match(tblock);
+									// Match matchWText2 = _lrcWText2.Match(tblock);
 									Match matchEText1 = _lrcEText1.Match(tblock);
 									// Match matchEText2 = _lrcEText2.Match(tblock);
 									if (matchEText1.Groups.Count > 1)
 									{
-                                        KMLyric.LyricWord mediumWord = new()
-                                        {
-                                            time = time2ms(matchEText1.Groups[2].Value,
-												matchEText1.Groups[3].Value, matchEText1.Groups[4].Value)
-                                        };
-                                        // Match matchWT2 = _lrcEText2.Match(matchEText1.Groups[1].Value);
-										Match matchWT1 = _lrcWText1.Match(matchEText1.Groups[1].Value);
-										// if (matchWT2.Groups.Count > 1) {
-										// 	gender = setGender(matchWT2.Groups[1].Value);
-										// }
-										if (matchWT1.Groups.Count > 1)
+                                        // KMLyric.LyricWord mediumWord = new();
+                                        // {
+                                        //     stime = time2ms(matchEText1.Groups[2].Value,
+										// 		matchEText1.Groups[3].Value, matchEText1.Groups[4].Value)
+                                        // };
+										if (matchEText1.Groups[1].Value != "")
 										{
-											lineGender = setGender(matchWT1.Groups[1].Value);
-											mediumWord.word = matchWT1.Groups[2].Value;
+											kmlyric.words.Add(new KMLyric.LyricWord {
+												word = matchEText1.Groups[1].Value,
+												stime = (prev_time == null) ? startWord.stime : prev_time,
+												raw = tblock
+											});
+											prev_time = time2ms(matchEText1.Groups[2].Value, matchEText1.Groups[3].Value,
+												matchEText1.Groups[4].Value);
 										}
-
+										else
+										{
+											prev_time = time2ms(matchEText1.Groups[2].Value, matchEText1.Groups[3].Value,
+												matchEText1.Groups[4].Value);
+										}
+									}
+									else if (prev_time != null)
+									{
+										kmlyric.words.Add(new KMLyric.LyricWord {
+											word = tblock,
+											stime = prev_time,
+											raw = tblock
+										});
+									}
+									else
+									{
+										startWord.word = tblock;
+										startWord.raw = tblock;
+										kmlyric.words.Add(startWord);
 									}
 								}
 							}
-							kmlyric.words.Add(startWord);
+							// TODO: +45 msec in end time tag
+							// enhanced: [02:13.12]text<02:14.00>text<02:14.17>text<02:14.21>
+							// kmlyric.words.Add(startWord);
 						}
 					}
                 }
@@ -183,14 +218,14 @@ namespace KTypeClass
 		private uint time2ms (string min, string sec, string hs)
 		{
 			if (hs == "") { hs = "0"; }
-			return Convert.ToUInt32(min) * 60000 
-				+ Convert.ToUInt32(sec) * 1000 
+			return Convert.ToUInt32(min) * 60000
+				+ Convert.ToUInt32(sec) * 1000
 				+ Convert.ToUInt32(hs) * 10;
 		}
-		
+
 		[GeneratedRegex(@"^\[(#|[a-z][a-z0-9]+):([^\]]+)\]\s*")]
 		private static partial Regex LrcTagRegex();
-		
+
 		// simple1: [02:13]text
 		// simple2: [02:13.12]text
 		// minilyrics: [02:13.12][02:15.12][03:13.12]text
@@ -204,7 +239,8 @@ namespace KTypeClass
 		// private static partial Regex LrcWTextRegex2();
 		// enhanced1: [02:13.12]text<02:14.00>text<02:14.17>text<02:14.19>
 		// enhanced2: [02:13.12]<02:14.00>text<02:14.17>text<02:14.19>
-		[GeneratedRegex(@"^([^<]+)<([0-9]{2}):([0-9]{2})\.?([0-9]{,2})$")]
+		// [GeneratedRegex(@"^([^<]*)<([0-9]{2}):([0-9]{2})\.?([0-9]{,2})$")]
+		[GeneratedRegex(@"^([^<]*)<([0-9]{2}):([0-9]{2})\.?([0-9]?[0-9]?)$")]
 		private static partial Regex LrcETextRegex1();
 		// [GeneratedRegex(@"^<([0-9]{2}):([0-9]{2})\.?([0-9]{,2})$")]
 		// private static partial Regex LrcETextRegex2();

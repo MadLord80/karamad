@@ -81,9 +81,11 @@ namespace Karamad
             public string resolutiony {get; set;}
             public string timer {get; set;}
         }
-        public class LyricWord 
+        public class LyricWord
 		{
-			public uint? time {get; set;}
+			public string raw {get; set;}
+			public uint? stime {get; set;}
+			public uint? etime {get; set;}
 			public string word {get; set;}
 			// for MiniLyrics
 			public List<uint> times {get; set;}
@@ -99,7 +101,7 @@ namespace Karamad
 			// left, right, vertical
 			public uint[] margin {get; set;}
 			public string effect {get; set;}
-		}		
+		}
 		public enum Gender { male, female, duet, none }
 		// TODO: add more types
 		public enum WordType { normal, golden, freestyle }
