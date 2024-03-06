@@ -24,10 +24,12 @@ namespace KTypeClass
 			{"al", "album"},
 			{"ti", "title"},
 			{"au", "author"},
+			{"lr", "lyricists"},
 			{"length", "length"},
 			{"by", "creator"},
 			{"offset", "offset"},
 			{"re", "application"},
+			{"tool", "tool"},
 			{"ve", "version"},
 			{"#", "comment"}
 		};
@@ -83,10 +85,17 @@ namespace KTypeClass
 			KMLyric kmlyric = new();
 			using (StreamReader sr = new(file.FullName, _fileEncoding, _hasBom))
 			{
+				uint? eol_time = null;
 				while (sr.Peek() >= 0)
                 {
                     string? line = sr.ReadLine();
 					if (line == null) continue;
+
+					if (eol_time != null)
+					{
+						kmlyric.words.Last().etime = eol_time;
+						eol_time = null;
+					}
 
 					Match matchLineTag = _lrcTag.Match(line);
 					// meta
@@ -94,7 +103,7 @@ namespace KTypeClass
 					{
 						string metaName = _meta[matchLineTag.Groups[1].Value];
 						string tagValue = matchLineTag.Groups[2].Value;
-						kmlyric.meta.GetType().GetProperty(metaName).SetValue(kmlyric.meta, tagValue);
+						kmlyric.meta.GetType().GetProperty(metaName)?.SetValue(kmlyric.meta, tagValue);
 					}
 					// words
 					else
@@ -106,7 +115,7 @@ namespace KTypeClass
 						// [00:00.00] <00:00.04> When <00:00.16> the <00:05.92> lies ",
 						// enhanced1+w2: [02:13.12]M:<02:14.00>text<02:14.17>text<02:14.19>
 						// enhanced2:   [02:13.12]<02:14.00>text<02:14.17>text<02:14.19>
-						foreach (string block in line.Split(']'))
+						foreach (string block in line.Split(']', StringSplitOptions.RemoveEmptyEntries))
 						{
 							Match matchTime = _lrcSTime.Match(block);
 							// times:
@@ -140,7 +149,7 @@ namespace KTypeClass
 								else {
 									startWord.word = block;
 								}
-								startWord.raw = block;
+								// startWord.raw = block;
 								kmlyric.words.Add(startWord);
 							}
 							// enhanced: [02:13.12]text<02:14.00>text<02:14.17>text
@@ -151,7 +160,7 @@ namespace KTypeClass
 							else
 							{
 								uint? prev_time = null;
-								foreach (string tblock in block.Split('>'))
+								foreach (string tblock in block.Split('>', StringSplitOptions.RemoveEmptyEntries))
 								{
 									// Match matchWText1 = _lrcWText1.Match(tblock);
 									// Match matchWText2 = _lrcWText2.Match(tblock);
@@ -169,10 +178,11 @@ namespace KTypeClass
 											kmlyric.words.Add(new KMLyric.LyricWord {
 												word = matchEText1.Groups[1].Value,
 												stime = (prev_time == null) ? startWord.stime : prev_time,
-												raw = tblock
+												// raw = tblock
 											});
 											prev_time = time2ms(matchEText1.Groups[2].Value, matchEText1.Groups[3].Value,
 												matchEText1.Groups[4].Value);
+											eol_time = prev_time;
 										}
 										else
 										{
@@ -185,13 +195,22 @@ namespace KTypeClass
 										kmlyric.words.Add(new KMLyric.LyricWord {
 											word = tblock,
 											stime = prev_time,
-											raw = tblock
+											// raw = tblock
 										});
 									}
 									else
 									{
-										startWord.word = tblock;
-										startWord.raw = tblock;
+										Match matchWT1 = _lrcWText1.Match(tblock);
+										if (matchWT1.Groups.Count > 1)
+										{
+											startWord.gender = setGender(matchWT1.Groups[1].Value);
+											startWord.word = matchWT1.Groups[2].Value;
+										}
+										else {
+											startWord.word = block;
+										}
+										// startWord.word = tblock;
+										// startWord.raw = tblock;
 										kmlyric.words.Add(startWord);
 									}
 								}
@@ -204,6 +223,9 @@ namespace KTypeClass
                 }
 
 				sr.Close();
+				if (eol_time != null) {
+					kmlyric.words.Last().etime = eol_time;
+				}
 			}
 
 			return true;
@@ -223,7 +245,7 @@ namespace KTypeClass
 				+ Convert.ToUInt32(hs) * 10;
 		}
 
-		[GeneratedRegex(@"^\[(#|[a-z][a-z0-9]+):([^\]]+)\]\s*")]
+		[GeneratedRegex(@"^\[(#|[a-z][a-z0-9]+):\s*([^\]]+)\]\s*")]
 		private static partial Regex LrcTagRegex();
 
 		// simple1: [02:13]text
@@ -232,7 +254,7 @@ namespace KTypeClass
 		[GeneratedRegex(@"^\[([0-9]{2}):([0-9]{2})\.?([0-9]{0,2})$")]
 		private static partial Regex LrcSTimeRegex();
 		// walaoke: [02:13.12]F:text
-		[GeneratedRegex(@"^([FMD]):(.+)")]
+		[GeneratedRegex(@"^([FMD]):\s*(.+)")]
 		private static partial Regex LrcWTextRegex1();
 		// walaoke: [02:13.12]F:<02:14.00>text
 		// [GeneratedRegex(@"^([FMD]):$")]

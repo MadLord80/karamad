@@ -68,11 +68,18 @@ namespace Karamad
             public string artist {get; set;}
             public string album {get; set;}
             public string title {get; set;}
-            public string author {get; set;}
             public string length {get; set;}
-            public string creator {get; set;}
+            // author of song text
+			public string author {get; set;}
+            // creator of lrc file
+			public string creator {get; set;}
+			// creator of lyric
+			public string lyricists {get; set;}
             public string offset {get; set;}
-            public string application {get; set;}
+            // the player or editor that created the LRC file
+			public string application {get; set;}
+			// software used to create LRC file
+			public string tool {get; set;}
             public string version {get; set;}
             public string language {get; set;}
 			public string comment {get; set;}
@@ -83,7 +90,7 @@ namespace Karamad
         }
         public class LyricWord
 		{
-			public string raw {get; set;}
+			// public string raw {get; set;}
 			public uint? stime {get; set;}
 			public uint? etime {get; set;}
 			public string word {get; set;}
