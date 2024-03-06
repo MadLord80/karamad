@@ -80,6 +80,7 @@ namespace KTypeClass
 			using (StreamReader sr = new(file.FullName, _fileEncoding, _hasBom))
 			{
 				uint? eol_time = null;
+				// TODO: set end of line!!!
 				while (sr.Peek() >= 0)
                 {
                     string? line = sr.ReadLine();
