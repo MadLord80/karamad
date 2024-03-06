@@ -13,10 +13,8 @@ namespace KTypeClass
 
 		private Regex _lrcTag = LrcTagRegex();
 		private Regex _lrcSTime = LrcSTimeRegex();
-		private Regex _lrcWText1 = LrcWTextRegex1();
-		// private Regex _lrcWText2 = LrcWTextRegex2();
-		private Regex _lrcEText1 = LrcETextRegex1();
-		// private Regex _lrcEText2 = LrcETextRegex2();
+		private Regex _lrcWText = LrcWTextRegex();
+		private Regex _lrcEText = LrcETextRegex();
 
 		private Dictionary<string, string> _meta = new()
 		{
@@ -34,10 +32,6 @@ namespace KTypeClass
 			{"#", "comment"}
 		};
 
-		// public bool DetectTypeByExtension(FileInfo file)
-		// {
-		// 	return _extensions.Contains(file.Extension);
-		// }
 		public string[] fileExtensions {get => _extensions;}
 
 		public bool DetectTypeByContent(FileInfo file)
@@ -109,7 +103,6 @@ namespace KTypeClass
 					else
 					{
 						KMLyric.LyricWord startWord = new(){times = []};
-						// KMLyric.Gender lineGender = KMLyric.Gender.none;
 
 						// ???
 						// [00:00.00] <00:00.04> When <00:00.16> the <00:05.92> lies ",
@@ -140,7 +133,7 @@ namespace KTypeClass
 							// [02:13.12][02:15.12][03:13.12]F:text
 							else if (startWord.times.Count > 0)
 							{
-								Match matchWT1 = _lrcWText1.Match(block);
+								Match matchWT1 = _lrcWText.Match(block);
 								if (matchWT1.Groups.Count > 1)
 								{
 									startWord.gender = setGender(matchWT1.Groups[1].Value);
@@ -149,7 +142,6 @@ namespace KTypeClass
 								else {
 									startWord.word = block;
 								}
-								// startWord.raw = block;
 								kmlyric.words.Add(startWord);
 							}
 							// enhanced: [02:13.12]text<02:14.00>text<02:14.17>text
@@ -162,23 +154,14 @@ namespace KTypeClass
 								uint? prev_time = null;
 								foreach (string tblock in block.Split('>', StringSplitOptions.RemoveEmptyEntries))
 								{
-									// Match matchWText1 = _lrcWText1.Match(tblock);
-									// Match matchWText2 = _lrcWText2.Match(tblock);
-									Match matchEText1 = _lrcEText1.Match(tblock);
-									// Match matchEText2 = _lrcEText2.Match(tblock);
+									Match matchEText1 = _lrcEText.Match(tblock);
 									if (matchEText1.Groups.Count > 1)
 									{
-                                        // KMLyric.LyricWord mediumWord = new();
-                                        // {
-                                        //     stime = time2ms(matchEText1.Groups[2].Value,
-										// 		matchEText1.Groups[3].Value, matchEText1.Groups[4].Value)
-                                        // };
 										if (matchEText1.Groups[1].Value != "")
 										{
 											kmlyric.words.Add(new KMLyric.LyricWord {
 												word = matchEText1.Groups[1].Value,
-												stime = (prev_time == null) ? startWord.stime : prev_time,
-												// raw = tblock
+												stime = (prev_time == null) ? startWord.stime : prev_time
 											});
 											prev_time = time2ms(matchEText1.Groups[2].Value, matchEText1.Groups[3].Value,
 												matchEText1.Groups[4].Value);
@@ -194,13 +177,12 @@ namespace KTypeClass
 									{
 										kmlyric.words.Add(new KMLyric.LyricWord {
 											word = tblock,
-											stime = prev_time,
-											// raw = tblock
+											stime = prev_time
 										});
 									}
 									else
 									{
-										Match matchWT1 = _lrcWText1.Match(tblock);
+										Match matchWT1 = _lrcWText.Match(tblock);
 										if (matchWT1.Groups.Count > 1)
 										{
 											startWord.gender = setGender(matchWT1.Groups[1].Value);
@@ -209,8 +191,6 @@ namespace KTypeClass
 										else {
 											startWord.word = block;
 										}
-										// startWord.word = tblock;
-										// startWord.raw = tblock;
 										kmlyric.words.Add(startWord);
 									}
 								}
@@ -228,7 +208,23 @@ namespace KTypeClass
 				}
 			}
 
+			string test_encode = encode(kmlyric);
+
 			return true;
+		}
+
+		public string encode (KMLyric kmlyric)
+		{
+			string lyric = "";
+
+			return lyric;
+		}
+
+		public KMLyric decode (FileInfo file)
+		{
+			KMLyric kmlyric = new();
+
+			return kmlyric;
 		}
 
 		private KMLyric.Gender setGender (string g)
@@ -255,16 +251,10 @@ namespace KTypeClass
 		private static partial Regex LrcSTimeRegex();
 		// walaoke: [02:13.12]F:text
 		[GeneratedRegex(@"^([FMD]):\s*(.+)")]
-		private static partial Regex LrcWTextRegex1();
-		// walaoke: [02:13.12]F:<02:14.00>text
-		// [GeneratedRegex(@"^([FMD]):$")]
-		// private static partial Regex LrcWTextRegex2();
+		private static partial Regex LrcWTextRegex();
 		// enhanced1: [02:13.12]text<02:14.00>text<02:14.17>text<02:14.19>
 		// enhanced2: [02:13.12]<02:14.00>text<02:14.17>text<02:14.19>
-		// [GeneratedRegex(@"^([^<]*)<([0-9]{2}):([0-9]{2})\.?([0-9]{,2})$")]
 		[GeneratedRegex(@"^([^<]*)<([0-9]{2}):([0-9]{2})\.?([0-9]?[0-9]?)$")]
-		private static partial Regex LrcETextRegex1();
-		// [GeneratedRegex(@"^<([0-9]{2}):([0-9]{2})\.?([0-9]{,2})$")]
-		// private static partial Regex LrcETextRegex2();
+		private static partial Regex LrcETextRegex();
 	}
 }
