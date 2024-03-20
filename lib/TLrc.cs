@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Karamad;
 using Mozilla.NUniversalCharDet;
+using TagLib;
 
 namespace KTypeClass
 {
@@ -80,7 +81,6 @@ namespace KTypeClass
 			using (StreamReader sr = new(file.FullName, _fileEncoding, _hasBom))
 			{
 				uint? eol_time = null;
-				// TODO: set end of line!!!
 				while (sr.Peek() >= 0)
                 {
                     string? line = sr.ReadLine();
@@ -89,6 +89,7 @@ namespace KTypeClass
 					if (eol_time != null)
 					{
 						kmlyric.words.Last().etime = eol_time;
+						kmlyric.words.Last().eol = true;
 						eol_time = null;
 					}
 
@@ -118,7 +119,7 @@ namespace KTypeClass
 							// [02:13.12][03:13.12][04:13.12]text
 							if (matchTime.Groups.Count > 1)
 							{
-								uint ms = time2ms(matchTime.Groups[1].Value,
+								uint ms = timeMSH2ms(matchTime.Groups[1].Value,
 									matchTime.Groups[2].Value, matchTime.Groups[3].Value);
 								if (startWord.stime == null) {
 									startWord.stime = ms;
@@ -143,6 +144,7 @@ namespace KTypeClass
 								else {
 									startWord.word = block;
 								}
+								startWord.eol = true;
 								kmlyric.words.Add(startWord);
 							}
 							// enhanced: [02:13.12]text<02:14.00>text<02:14.17>text
@@ -164,13 +166,13 @@ namespace KTypeClass
 												word = matchEText1.Groups[1].Value,
 												stime = (prev_time == null) ? startWord.stime : prev_time
 											});
-											prev_time = time2ms(matchEText1.Groups[2].Value, matchEText1.Groups[3].Value,
+											prev_time = timeMSH2ms(matchEText1.Groups[2].Value, matchEText1.Groups[3].Value,
 												matchEText1.Groups[4].Value);
 											eol_time = prev_time;
 										}
 										else
 										{
-											prev_time = time2ms(matchEText1.Groups[2].Value, matchEText1.Groups[3].Value,
+											prev_time = timeMSH2ms(matchEText1.Groups[2].Value, matchEText1.Groups[3].Value,
 												matchEText1.Groups[4].Value);
 										}
 									}
@@ -218,6 +220,26 @@ namespace KTypeClass
 		{
 			string lyric = "";
 
+			using (StreamWriter sw = new("lyric.out", false))
+			{
+				foreach (KeyValuePair<string, string> meta in _meta)
+				{
+					string? val = (string?) kmlyric.meta.GetType().GetProperty(meta.Value)?.GetValue(kmlyric.meta);
+					if (val != null) {
+						// lyric += "[" + meta.Key + ": " + val + "]\n";
+						sw.WriteLine("[" + meta.Key + ": " + val + "]");
+					}
+				}
+
+				string line = "";
+				foreach (KMLyric.LyricWord word in kmlyric.words)
+				{
+					uint stime = (uint)((word.stime != null) ? word.stime : 0);
+					// line += "[" + ms2timeMSH(stime) + "]";
+					sw.WriteLine("[" + ms2timeMSH(stime) + "]" + word.word);
+				}
+			}
+
 			return lyric;
 		}
 
@@ -234,12 +256,25 @@ namespace KTypeClass
 			if (g == "D") { gender = KMLyric.Gender.duet; }
 			return gender;
 		}
-		private uint time2ms (string min, string sec, string hs)
+		// TODO: to utilities
+		// 01:03:00 -> 63000
+		private uint timeMSH2ms (string min, string sec, string hs)
 		{
 			if (hs == "") { hs = "0"; }
 			return Convert.ToUInt32(min) * 60000
 				+ Convert.ToUInt32(sec) * 1000
 				+ Convert.ToUInt32(hs) * 10;
+		}
+		// TODO: to utilities
+		// 63000 -> 01:03:00
+		private string ms2timeMSH (uint ms)
+		{
+			double min = Math.Floor((double)ms / 60000);
+			double sec = Math.Floor((ms - min * 60000) / 1000);
+			double hs = ms - min * 60000 - sec * 1000;
+			string[] MSH = [String.Format("{0:00}", min), String.Format("{0:00}", sec), String.Format("{0:00}", hs)];
+
+			return String.Join(":", MSH);
 		}
 
 		[GeneratedRegex(@"^\[(#|[a-z][a-z0-9]+):\s*([^\]]+)\]\s*")]

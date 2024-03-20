@@ -65,7 +65,6 @@ namespace Karamad
         public List<LyricWord> words = [];
 		public class LyriMmeta
         {
-			public bool eol {get; set;}
             public string artist {get; set;}
             public string album {get; set;}
             public string title {get; set;}
@@ -91,6 +90,7 @@ namespace Karamad
         }
         public class LyricWord
 		{
+			public bool eol {get; set;}
 			// public string raw {get; set;}
 			public uint? stime {get; set;}
 			public uint? etime {get; set;}

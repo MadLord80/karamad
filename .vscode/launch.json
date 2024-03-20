@@ -14,7 +14,7 @@
 			// "args": ["-i", "examples/enhanced-utf8.lrc"],
 			// "args": ["-i", "examples/simple-utf8.lrc"],
 			// "args": ["-i", "examples/walaoke-utf8.lrc"],
-			"args": ["-i", "examples/minilyrics-utf8.lrc"],
+			"args": ["-i", "examples/lrc/minilyrics-utf8.lrc"],
 			// "args": ["-i", "examples/Агата Кристи - Как На Войне (-,Vid).lrc"],
 			// "args": ["-i", "examples/Баста_-_Сансара.kfn"],
 			// "args": ["-i", "examples/Агата Кристи - Как На Войне (-,Vid).kfn"],
